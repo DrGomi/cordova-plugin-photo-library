@@ -194,16 +194,14 @@ final class PhotoLibraryService {
     }
 
 
-    func addFullImagePath(_ libraryItem: NSDictionary, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
+    func getFullImagePath(_ libItem: NSDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
 
-        let ident = libraryItem.object(forKey: "id") as! String
+        let ident = libItem.object(forKey: "id") as! String
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [ident], options: self.fetchOptions)
         if fetchResult.count == 0 {
-            completion(nil, "Could not locat library item with ID: "+ident)
+            completion(nil)
             return
         } else {
-            // let mime_type = libraryItem.object(forKey: "mimeType") as! String
-            // let mediaType = mime_type.components(separatedBy: "/").first
             fetchResult.enumerateObjects({
                 (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
                 let asset = obj as! PHAsset
@@ -212,16 +210,14 @@ final class PhotoLibraryService {
                     (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
 
                     if(imageData == nil) {
-                        completion(nil, "No Image Data available")
+                        completion(nil)
                     } else {
                         let file_url:URL = info!["PHImageFileURLKey"] as! URL
-                        libraryItem["filePath"] = file_url.relativePath
-                        completion(libraryItem, nil)
+                        completion(file_url.relativePath)
                     }
                 }
             })
         }
-
     }
 
     func getCompleteInfo(_ libraryItem: NSDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
@@ -568,15 +564,21 @@ final class PhotoLibraryService {
                         completion(nil, error)
                     } else {
                         let fetchResult = PHAsset.fetchAssets(withALAssetURLs: [assetUrl], options: nil)
-                        var libraryItem: NSDictionary? = nil
+//                        var libraryItem: NSDictionary? = nil
                         if fetchResult.count == 1 {
                             let asset = fetchResult.firstObject
                             if let asset = asset {
-                                libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
-                                self.addFullImagePath(libraryItem)
+                                let libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
+
+                                self.getFullImagePath(libraryItem, completion: { (fullPath) in
+                                    // "filePath" property is new => works in WKWebView!
+                                    libraryItem["filePath"] = fullPath
+                                    completion(libraryItem, nil)
+                                })
+                                
                             }
                         }
-                        // completion(libraryItem, nil)
+//                        completion(libraryItem, nil)
                     }
                 })
 
