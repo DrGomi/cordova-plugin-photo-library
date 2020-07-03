@@ -194,7 +194,7 @@ final class PhotoLibraryService {
     }
 
 
-    func addFullImagePath(_ libraryItem: NSDictionary, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?)->Void) {
+    func addFullImagePath(_ libraryItem: NSDictionary, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
 
         let ident = libraryItem.object(forKey: "id") as! String
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [ident], options: self.fetchOptions)
@@ -202,6 +202,9 @@ final class PhotoLibraryService {
             completion(nil)
             return
         }
+
+        let mime_type = libraryItem.object(forKey: "mimeType") as! String
+        let mediaType = mime_type.components(separatedBy: "/").first
 
         fetchResult.enumerateObjects({
             (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
@@ -211,7 +214,7 @@ final class PhotoLibraryService {
                 (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
 
                 if(imageData == nil) {
-                    completion(nil)
+                    completion(nil, "No Image Data available")
                 } else {
                     let file_url:URL = info!["PHImageFileURLKey"] as! URL
                     libraryItem["filePath"] = file_url.relativePath
