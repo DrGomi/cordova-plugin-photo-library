@@ -199,29 +199,29 @@ final class PhotoLibraryService {
         let ident = libraryItem.object(forKey: "id") as! String
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [ident], options: self.fetchOptions)
         if fetchResult.count == 0 {
-            completion(nil)
+            completion(nil, "Could not locat library item with ID: "+ident)
             return
+        } else {
+            // let mime_type = libraryItem.object(forKey: "mimeType") as! String
+            // let mediaType = mime_type.components(separatedBy: "/").first
+            fetchResult.enumerateObjects({
+                (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+                let asset = obj as! PHAsset
+
+                PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
+                    (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
+
+                    if(imageData == nil) {
+                        completion(nil, "No Image Data available")
+                    } else {
+                        let file_url:URL = info!["PHImageFileURLKey"] as! URL
+                        libraryItem["filePath"] = file_url.relativePath
+                        completion(libraryItem, nil)
+                    }
+                }
+            })
         }
 
-        let mime_type = libraryItem.object(forKey: "mimeType") as! String
-        let mediaType = mime_type.components(separatedBy: "/").first
-
-        fetchResult.enumerateObjects({
-            (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
-            let asset = obj as! PHAsset
-
-            PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
-                (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
-
-                if(imageData == nil) {
-                    completion(nil, "No Image Data available")
-                } else {
-                    let file_url:URL = info!["PHImageFileURLKey"] as! URL
-                    libraryItem["filePath"] = file_url.relativePath
-                    completion(libraryItem, nil)
-                }
-            }
-        })
     }
 
     func getCompleteInfo(_ libraryItem: NSDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
