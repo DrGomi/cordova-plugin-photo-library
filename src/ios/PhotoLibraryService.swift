@@ -194,6 +194,33 @@ final class PhotoLibraryService {
     }
 
 
+    func addFullImagePath(_ libraryItem: NSDictionary, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?)->Void) {
+
+        let ident = libraryItem.object(forKey: "id") as! String
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [ident], options: self.fetchOptions)
+        if fetchResult.count == 0 {
+            completion(nil)
+            return
+        }
+
+        fetchResult.enumerateObjects({
+            (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
+            let asset = obj as! PHAsset
+
+            PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
+                (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
+
+                if(imageData == nil) {
+                    completion(nil)
+                } else {
+                    let file_url:URL = info!["PHImageFileURLKey"] as! URL
+                    libraryItem["filePath"] = file_url.relativePath
+                    completion(libraryItem, nil)
+                }
+            }
+        })
+    }
+
     func getCompleteInfo(_ libraryItem: NSDictionary, completion: @escaping (_ fullPath: String?) -> Void) {
 
 
@@ -543,9 +570,10 @@ final class PhotoLibraryService {
                             let asset = fetchResult.firstObject
                             if let asset = asset {
                                 libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
+                                self.addFullImagePath(libraryItem)
                             }
                         }
-                        completion(libraryItem, nil)
+                        // completion(libraryItem, nil)
                     }
                 })
 
