@@ -1,3 +1,4 @@
+cordova.define("cordova-plugin-photo-library.PhotoLibrary", function(require, exports, module) {
 var exec = require('cordova/exec');
 
 var async = cordova.require('cordova-plugin-photo-library.async');
@@ -82,6 +83,19 @@ photoLibrary.getAlbums = function (success, error) {
     error,
     'PhotoLibrary',
     'getAlbums', []
+  );
+
+};
+
+photoLibrary.getPhotosFromAlbum = function (albumTitle, success, error) {
+
+  cordova.exec(
+    function (result) {
+      success(result);
+    },
+    error,
+    'PhotoLibrary',
+    'getPhotosFromAlbum', [albumTitle]
   );
 
 };
@@ -195,6 +209,25 @@ photoLibrary.getPhoto = function (photoIdOrLibraryItem, success, error, options)
     error,
     'PhotoLibrary',
     'getPhoto', [photoId, options]
+  );
+
+};
+    
+// url is file url or dataURL
+photoLibrary.getPhotoLibraryItem = function (itemId, success, error) {
+
+//  if (!options) {
+//    options = {};
+//  }
+
+  cordova.exec(
+    function (libraryItem) {
+      var photoLibraryItem = libraryItem ? libraryItem : undefined;
+      success(photoLibraryItem);
+    },
+    error,
+    'PhotoLibrary',
+    'getPhotoLibraryItem', [itemId]
   );
 
 };
@@ -385,3 +418,5 @@ function fixedEncodeURIComponent(str) {
     return '%' + c.charCodeAt(0).toString(16);
   });
 }
+
+});
