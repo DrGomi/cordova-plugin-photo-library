@@ -519,7 +519,7 @@ final class PhotoLibraryService {
         }
 
         // Permission was manually denied by user, open settings screen
-        let settingsUrl = URL(string: UIApplication.openSettingsURLString)
+        let settingsUrl = URL(string: UIApplicationOpenSettingsURLString)
         if let url = settingsUrl {
             UIApplication.shared.openURL(url)
             // TODO: run callback only when return ?
@@ -761,10 +761,10 @@ final class PhotoLibraryService {
         var mimeType: String?
 
         if (imageHasAlpha(image)){
-            data = image.pngData()
+            data = UIImagePNGRepresentation(image)
             mimeType = data != nil ? "image/png" : nil
         } else {
-            data = image.jpegData(compressionQuality: CGFloat(quality))
+            data = UIImageJPEGRepresentation(image, CGFloat(quality))
             mimeType = data != nil ? "image/jpeg" : nil
         }
 
