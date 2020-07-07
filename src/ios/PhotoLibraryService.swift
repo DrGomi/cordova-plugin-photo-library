@@ -395,6 +395,25 @@ final class PhotoLibraryService {
             }
         })
     }
+    
+    func getPhotoLibraryItem(_ itemId: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
+        let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [itemId], options: self.fetchOptions)
+        if fetchResult.count == 0 {
+            completion(nil, "No item in photo library with ID: "+itemId)
+            return
+        } else {
+            let asset = fetchResult.firstObject
+            if let asset = asset {
+                let libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: false)
+
+                self.getFullImagePath(libraryItem, completion: { (fullPath) in
+                    // "filePath" property works in WKWebView!
+                    libraryItem["filePath"] = fullPath
+                    completion(libraryItem, nil)
+                })
+            }
+        }
+    }
 
 
     func getLibraryItem(_ itemId: String, mimeType: String, completion: @escaping (_ base64: String?) -> Void) {

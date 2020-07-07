@@ -199,6 +199,20 @@ photoLibrary.getPhoto = function (photoIdOrLibraryItem, success, error, options)
 
 };
 
+photoLibrary.getPhotoLibraryItem = function (itemId, success, error) {
+
+  cordova.exec(
+    function (libraryItem) {
+      var photoLibraryItem = libraryItem ? libraryItem : undefined;
+      success(photoLibraryItem);
+    },
+    error,
+    'PhotoLibrary',
+    'getPhotoLibraryItem', [itemId]
+  );
+
+};
+
 photoLibrary.getLibraryItem = function (libraryItem, success, error, options) {
 
   if (!options) {
