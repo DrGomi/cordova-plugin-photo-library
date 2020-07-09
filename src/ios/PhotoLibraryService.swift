@@ -400,32 +400,52 @@ final class PhotoLibraryService {
         
         let assetsLibrary = ALAssetsLibrary()
         
-        let assetUrl = URL(string: urlString)
+//        let assetUrl = URL(string: urlString)
         
-        if let url = assetUrl {
-            self.putMediaToAlbum(assetsLibrary, url: url, album: album, completion: { (error) in
-                if error != nil {
-                    completion(nil, error)
-                } else {
-                    let fetchResult = PHAsset.fetchAssets(withALAssetURLs: [url], options: nil)
-                    if fetchResult.count == 1 {
-                        let asset = fetchResult.firstObject
-                        if let asset = asset {
-                            let libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
-
-                            self.getFullImagePath(libraryItem, completion: { (fullPath) in
-                                // "filePath" property is new => works in WKWebView!
-                                libraryItem["filePath"] = fullPath
-                                completion(libraryItem, nil)
-                            })
-                            
-                        }
+        if let url = URL(string: urlString) { // 1.) success: urlString is valid
+            
+            // local function addItemToAlbum
+            func addItemToAlbum(_ photoAlbum: PHAssetCollection) {
+                self.putMediaToAlbum(assetsLibrary, url: url, album: album, completion: { (error) in
+                    if error != nil {
+                        completion(nil, error)
                     } else {
-                        completion(nil, "unspecific asset-url: "+urlString)
+                        let fetchResult = PHAsset.fetchAssets(withALAssetURLs: [url], options: nil)
+                        if fetchResult.count == 1 {
+                            let asset = fetchResult.firstObject
+                            if let asset = asset {
+                                let libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
+
+                                self.getFullImagePath(libraryItem, completion: { (fullPath) in
+                                    // "filePath" property is new => works in WKWebView!
+                                    libraryItem["filePath"] = fullPath
+                                    completion(libraryItem, nil)
+                                })
+                                
+                            }
+                        } else {
+                            completion(nil, "unspecific asset-url: "+urlString)
+                        }
                     }
+                })
+            }
+            
+            if let photoAlbum = PhotoLibraryService.getPhotoAlbum(album) { // 2.) success: photoAlbum with given name already exists
+                
+                addItemToAlbum(photoAlbum) // call local function addItemToAlbum
+                
+            } else { // 2.) error: photoAlbum with given name doesn't exists
+                PhotoLibraryService.createPhotoAlbum(album) { (photoAlbum: PHAssetCollection?, error: String?) in
+
+                    guard let photoAlbum = photoAlbum else { // 3.) error: coldn't create album
+                        completion(nil, error)
+                        return
+                    }
+                    addItemToAlbum(photoAlbum) // call local function addItemToAlbum
                 }
-            })
-        } else {
+            }
+            
+        } else { // 1.) error : urlString is invalid
             completion(nil, "invalid asset-url: "+urlString)
         }
     }
