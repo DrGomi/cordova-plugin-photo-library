@@ -278,6 +278,32 @@ import Foundation
         }
     }
 
+    @objc func createPhotoAlbum(_ command: CDVInvokedUrlCommand) {
+        concurrentQueue.async {
+
+            if !PhotoLibraryService.hasPermission() {
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: PhotoLibraryService.PERMISSION_ERROR)
+                self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                return
+            }
+            
+            let album = command.arguments[0] as! String
+
+            let service = PhotoLibraryService.instance
+
+            service.createPhotoAlbum(album: album) { (success: String?, error: String?) in
+                if (error != nil) {
+                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error)
+                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                } else {
+                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: success)
+                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                }
+            }
+
+        }
+    }
+
     @objc func saveVideo(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {
 

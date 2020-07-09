@@ -282,6 +282,21 @@ photoLibrary.saveImage = function (url, album, success, error, options) {
 
 };
 
+photoLibrary.createPhotoAlbum = function (album, success, error) {
+    
+    if (!album) {
+        return error("the album to be created must be given a proper name!");
+    } else {
+        cordova.exec(
+              function (successCallback) {
+                success(successCallback);
+              },
+              error,
+              'PhotoLibrary',
+              'createPhotoAlbum', [album]
+        );
+    }
+};
 // url is file url or dataURL
 photoLibrary.saveVideo = function (url, album, success, error) {
 

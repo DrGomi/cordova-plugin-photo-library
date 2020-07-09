@@ -622,6 +622,21 @@ final class PhotoLibraryService {
 
     }
 
+    func createPhotoAlbum(album: String, completion: @escaping (_ success: String?, _ error: String?)->Void) {
+        if PhotoLibraryService.getPhotoAlbum(album) != nil {
+            completion("photo album: "+album+" already created!", nil)
+            return
+        } else {
+            PhotoLibraryService.createPhotoAlbum(album) { (photoAlbum: PHAssetCollection?, error: String?) in
+                if error != nil {
+                    completion(nil, error)
+                } else {
+                    completion("created photo album: "+album, nil)
+                }
+            }
+        }
+    }
+
     func saveVideo(_ url: String, album: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?)->Void) {
 
         guard let videoURL = URL(string: url) else {
