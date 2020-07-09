@@ -396,7 +396,7 @@ final class PhotoLibraryService {
         })
     }
 
-    func addItemToAlbum(_ urlString: String, _ album: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
+    func addLibraryItemToAlbum(_ urlString: String, _ album: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
         
         let assetsLibrary = ALAssetsLibrary()
         
