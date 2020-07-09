@@ -395,6 +395,40 @@ final class PhotoLibraryService {
             }
         })
     }
+
+    func addItemToAlbum(_ urlString: String, _ album: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
+        
+        let assetsLibrary = ALAssetsLibrary()
+        
+        let assetUrl = URL(string: urlString)
+        
+        if let url = assetUrl {
+            self.putMediaToAlbum(assetsLibrary, url: url, album: album, completion: { (error) in
+                if error != nil {
+                    completion(nil, error)
+                } else {
+                    let fetchResult = PHAsset.fetchAssets(withALAssetURLs: [url], options: nil)
+                    if fetchResult.count == 1 {
+                        let asset = fetchResult.firstObject
+                        if let asset = asset {
+                            let libraryItem = self.assetToLibraryItem(asset: asset, useOriginalFileNames: false, includeAlbumData: true)
+
+                            self.getFullImagePath(libraryItem, completion: { (fullPath) in
+                                // "filePath" property is new => works in WKWebView!
+                                libraryItem["filePath"] = fullPath
+                                completion(libraryItem, nil)
+                            })
+                            
+                        }
+                    } else {
+                        completion(nil, "unspecific asset-url: "+urlString)
+                    }
+                }
+            })
+        } else {
+            completion(nil, "invalid asset-url: "+urlString)
+        }
+    }
     
     func getPhotoLibraryItem(_ itemId: String, completion: @escaping (_ libraryItem: NSDictionary?, _ error: String?) -> Void) {
         let fetchResult = PHAsset.fetchAssets(withLocalIdentifiers: [itemId], options: self.fetchOptions)

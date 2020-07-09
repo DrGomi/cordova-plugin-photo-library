@@ -168,6 +168,30 @@ import Foundation
 
         }
     }
+
+    @objc(addLibraryItemToAlbum:) func addLibraryItemToAlbum(_ command: CDVInvokedUrlCommand) {
+        concurrentQueue.async {
+            
+            if !PhotoLibraryService.hasPermission() {
+                let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: PhotoLibraryService.PERMISSION_ERROR)
+                self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                return
+            }
+            
+            let service = PhotoLibraryService.instance
+            let urlString = command.arguments[0] as! String
+            let album = command.arguments[1] as! String
+            service.addLibraryItemToAlbum(urlString, album) { (libraryItem: NSDictionary?, error: String?) in
+                if (error != nil) {
+                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_ERROR, messageAs: error)
+                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId)
+                } else {
+                    let pluginResult = CDVPluginResult(status: CDVCommandStatus_OK, messageAs: libraryItem as! [String: AnyObject]?)
+                    self.commandDelegate!.send(pluginResult, callbackId: command.callbackId    )
+                }
+            }
+        }
+    }
     
     @objc(getPhotoLibraryItem:) func getPhotoLibraryItem(_ command: CDVInvokedUrlCommand) {
         concurrentQueue.async {

@@ -199,6 +199,23 @@ photoLibrary.getPhoto = function (photoIdOrLibraryItem, success, error, options)
 
 };
 
+photoLibrary.addLibraryItemToAlbum = function (assetUrl, albumName, success, error) {
+
+    if (!assetUrl || !albumName) {
+        return error("non-valid assetUrl AND/OR albumName");
+    } else {
+      cordova.exec(
+          function (libraryItem) {
+            var photoLibraryItem = libraryItem ? libraryItem : undefined;
+            success(photoLibraryItem);
+          },
+          error,
+          'PhotoLibrary',
+          'addLibraryItemToAlbum', [itemId]
+      );
+    }
+};
+
 photoLibrary.getPhotoLibraryItem = function (itemId, success, error) {
 
   cordova.exec(
