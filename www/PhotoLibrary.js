@@ -211,7 +211,7 @@ photoLibrary.addLibraryItemToAlbum = function (assetUrl, albumName, success, err
           },
           error,
           'PhotoLibrary',
-          'addLibraryItemToAlbum', [itemId]
+          'addLibraryItemToAlbum', [assetUrl, albumName]
       );
     }
 };
