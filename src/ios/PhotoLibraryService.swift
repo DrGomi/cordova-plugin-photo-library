@@ -206,16 +206,13 @@ final class PhotoLibraryService {
                 (obj: AnyObject, idx: Int, stop: UnsafeMutablePointer<ObjCBool>) -> Void in
                 let asset = obj as! PHAsset
 
-                PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
-                    (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
-
-                    if(imageData == nil) {
-                        completion(nil)
+                asset.requestContentEditingInput(with: nil, completionHandler: { (input, info) in
+                    if let input = input {
+                        completion(input.fullSizeImageURL?.relativePath)
                     } else {
-                        let file_url:URL = info!["PHImageFileURLKey"] as! URL
-                        completion(file_url.relativePath)
+                        completion(nil)
                     }
-                }
+                })
             })
         }
     }
@@ -239,18 +236,13 @@ final class PhotoLibraryService {
             let asset = obj as! PHAsset
 
             if(mediaType == "image") {
-                PHImageManager.default().requestImageData(for: asset, options: self.imageRequestOptions) {
-                    (imageData: Data?, dataUTI: String?, orientation: UIImageOrientation, info: [AnyHashable: Any]?) in
-
-                    if(imageData == nil) {
+                asset.requestContentEditingInput(with: nil, completionHandler: { (input, info) in
+                    if let input = input {
+                        completion(input.fullSizeImageURL?.relativePath)
+                    } else {
                         completion(nil)
                     }
-                    else {
-                        let file_url:URL = info!["PHImageFileURLKey"] as! URL
-//                        let mime_type = self.mimeTypes[file_url.pathExtension.lowercased()]!
-                        completion(file_url.relativePath)
-                    }
-                }
+                })
             }
             else if(mediaType == "video") {
 
