@@ -13,6 +13,7 @@ import android.os.Environment;
 import android.os.SystemClock;
 import android.provider.MediaStore;
 import android.util.Base64;
+import android.os.AsyncTask;
 
 import org.apache.cordova.CordovaInterface;
 import org.json.JSONArray;
@@ -393,6 +394,8 @@ public class PhotoLibraryService {
           queryResult.get("id") + ";" +
           queryResult.get("nativeURL"));
 
+      queryResult.put("filePath", "file://" + queryResult.get("nativeURL"));
+
       queryResult.remove("nativeURL"); // Not needed
 
       final String albumId = queryResult.getString("albumId");
@@ -678,23 +681,34 @@ public class PhotoLibraryService {
 
   private void addMedia(final Context context, final String url, final String album, final FilePathRunnable completion)
     throws IOException, URISyntaxException {
-      try {
 
-        final File albumDirectory = makeAlbumInPhotoLibrary(album);
-        final File startFile = new File(url);
-    
-        final String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
-        File targetFile = getImageFileName(albumDirectory, extension);
-    
-        startFile.renameTo(targetFile);
-    
-        addFileToMediaLibrary(context, targetFile, completion);
+      final File albumDirectory = makeAlbumInPhotoLibrary(album);
 
-      } catch(Exception e) {
-        throw new IOException(e);
+      final String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
+
+      File targetFile = getImageFileName(albumDirectory, extension);
+
+      final String startFilePath = startFile.getAbsolutePath();
+      File startFile;
+
+      if(url.startsWith("file://")) {
+        final String assetUrl = url.replace("file://", "");
+        startFile = new File(assetUrl);
+      } else {
+        startFile = new File(url);
       }
 
+      startFile.renameTo(targetFile);
 
+      new AsyncTask<Void, Void, Void>(){
+        @Override
+        protected Void doInBackground(Void... params) {
+            MediaScannerConnection.scanFile(context, new String[]{startFilePath}, null, null);
+            return null;
+        }
+    }.execute();
+
+    addFileToMediaLibrary(context, targetFile, completion);
   }
 
   public interface ChunkResultRunnable {
