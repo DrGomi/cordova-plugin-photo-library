@@ -202,7 +202,7 @@ public class PhotoLibrary extends CordovaPlugin {
               final String url = args.getString(0);
               final String album = args.getString(1);
 
-              service.saveImage(getContext(), url, album, new PhotoLibraryService.JSONObjectRunnable() {
+              service.addImageToAlbum(getContext(), url, album, new PhotoLibraryService.JSONObjectRunnable() {
                 @Override
                 public void run(JSONObject result) {
                   callbackContext.success(result);
@@ -216,6 +216,7 @@ public class PhotoLibrary extends CordovaPlugin {
           }
         });
         return true;
+
       } else if (ACTION_SAVE_IMAGE.equals(action)) {
         cordova.getThreadPool().execute(new Runnable() {
           public void run() {
