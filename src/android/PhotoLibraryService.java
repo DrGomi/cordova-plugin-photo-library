@@ -671,6 +671,9 @@ public class PhotoLibraryService {
       is.close();
 
     }
+
+    addFileToMediaLibrary(context, targetFile, completion);
+
   }
 
   private void addMedia(final Context context, final String url, final String album, final FilePathRunnable completion)
@@ -678,11 +681,11 @@ public class PhotoLibraryService {
 
     final File albumDirectory = makeAlbumInPhotoLibrary(album);
     final File startFile = new File(url);
-    File targetFile;
 
     final String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
-    targetFile = getImageFileName(albumDirectory, extension);
-    startFile.renameTo(targetFile);
+    File targetFile = getImageFileName(albumDirectory, extension);
+
+    startFile.renameTo(targetFile.getAbsolutePath());
 
     addFileToMediaLibrary(context, targetFile, completion);
 
