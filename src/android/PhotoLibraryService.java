@@ -218,6 +218,7 @@ public class PhotoLibraryService {
     });
 
   }
+
   public void addImageToAlbum(final Context context, final String url, final String album, final JSONObjectRunnable completion)
     throws IOException, URISyntaxException {
 
@@ -238,6 +239,25 @@ public class PhotoLibraryService {
         }
       }
     });
+
+  }
+
+  public void getPhotoLibraryItem(final Context context, final String photoId, final JSONObjectRunnable completion)
+    throws IOException, URISyntaxException {
+
+        try {
+          // Find the saved image in the library and return it as libraryItem
+          final String whereClause = MediaStore.Images.Media._ID + " = \"" + photoId + "\"";
+          queryLibrary(context, whereClause, new ChunkResultRunnable() {
+            @Override
+            public void run(final ArrayList<JSONObject> chunk, final int chunkNum, final boolean isLastChunk) {
+              completion.run(chunk.size() == 1 ? chunk.get(0) : null);
+            }
+          });
+        } catch (final Exception e) {
+          completion.run(null);
+        }
+
 
   }
 
@@ -684,32 +704,34 @@ public class PhotoLibraryService {
 
       final File albumDirectory = makeAlbumInPhotoLibrary(album);
 
+      // create target File
       final String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
-
       File targetFile = getImageFileName(albumDirectory, extension);
 
-      File startFile;
-      
-      if(url.startsWith("file://")) {
-        final String assetUrl = url.replace("file://", "");
-        startFile = new File(assetUrl);
-      } else {
-        startFile = new File(url);
-      }
-      
+      // get start File from url
+      final String assetUrl = url.replace("file://", "");
+      File startFile = new File(assetUrl);
+
+      // save startFileUri for clearing Media Gallery after moving
       final String startFilePath = startFile.getAbsolutePath();
-      
+
+      // move file from start File path to target File
       startFile.renameTo(targetFile);
 
-      new AsyncTask<Void, Void, Void>(){
-        @Override
-        protected Void doInBackground(Void... params) {
-            MediaScannerConnection.scanFile(context, new String[]{startFilePath}, null, null);
-            return null;
-        }
-    }.execute();
+      // clear Media Gallery in background
+      clearMediaLib(startFilePath);
+      // add target File to Media Gallery
+      addFileToMediaLibrary(context, targetFile, completion);
+  }
 
-    addFileToMediaLibrary(context, targetFile, completion);
+  private void clearMediaGallery(final String fileUri) {
+    new AsyncTask<Void, Void, Void>(){
+      @Override
+      protected Void doInBackground(Void... params) {
+          MediaScannerConnection.scanFile(context, new String[]{fileUri}, null, null);
+          return null;
+      }
+    }.execute();
   }
 
   public interface ChunkResultRunnable {
