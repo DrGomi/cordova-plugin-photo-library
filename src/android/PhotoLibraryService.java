@@ -688,16 +688,17 @@ public class PhotoLibraryService {
 
       File targetFile = getImageFileName(albumDirectory, extension);
 
-      final String startFilePath = startFile.getAbsolutePath();
       File startFile;
-
+      
       if(url.startsWith("file://")) {
         final String assetUrl = url.replace("file://", "");
         startFile = new File(assetUrl);
       } else {
         startFile = new File(url);
       }
-
+      
+      final String startFilePath = startFile.getAbsolutePath();
+      
       startFile.renameTo(targetFile);
 
       new AsyncTask<Void, Void, Void>(){
