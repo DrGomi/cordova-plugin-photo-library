@@ -673,21 +673,27 @@ public class PhotoLibraryService {
     }
 
     addFileToMediaLibrary(context, targetFile, completion);
-
+    
   }
 
   private void addMedia(final Context context, final String url, final String album, final FilePathRunnable completion)
     throws IOException, URISyntaxException {
+      try {
 
-    final File albumDirectory = makeAlbumInPhotoLibrary(album);
-    final File startFile = new File(url);
+        final File albumDirectory = makeAlbumInPhotoLibrary(album);
+        final File startFile = new File(url);
+    
+        final String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
+        File targetFile = getImageFileName(albumDirectory, extension);
+    
+        startFile.renameTo(targetFile);
+    
+        addFileToMediaLibrary(context, targetFile, completion);
 
-    final String extension = url.contains(".") ? url.substring(url.lastIndexOf(".")) : "";
-    File targetFile = getImageFileName(albumDirectory, extension);
+      } catch(Exception e) {
+        throw new IOException(e);
+      }
 
-    startFile.renameTo(targetFile.getAbsolutePath());
-
-    addFileToMediaLibrary(context, targetFile, completion);
 
   }
 
