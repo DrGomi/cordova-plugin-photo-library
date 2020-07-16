@@ -712,20 +712,17 @@ public class PhotoLibraryService {
       // move file from start File path to target File
       startFile.renameTo(targetFile);
 
-      // clear Media Gallery in background
-      clearMediaGallery(context, startFilePath);
-      // add target File to Media Gallery
-      addFileToMediaLibrary(context, targetFile, completion);
+      // save targetFileUri as well ... and save update fileUris in Array
+      final String targetFilePath = targetFile.getAbsolutePath();
+
+      final String[] updateFiles = { startFilePath, targetFilePath };
+
+      // refresh Media Gallery
+      refreshMediaLibrary(context, updateFiles, completion);
   }
 
-  private void clearMediaGallery(final Context context, final String fileUri) {
-    new AsyncTask<Void, Void, Void>(){
-      @Override
-      protected Void doInBackground(Void... params) {
-          MediaScannerConnection.scanFile(context, new String[]{fileUri}, null, null);
-          return null;
-      }
-    }.execute();
+  private void refreshMediaLibrary(final Context context, final String[] fileURIs, final FilePathRunnable completion) {
+    MediaScannerConnection.scanFile(context, fileURIs, null, (path, uri) -> completion.run(path));
   }
 
   private String getRelativePath(final String fileUri) {
