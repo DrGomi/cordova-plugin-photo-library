@@ -227,13 +227,11 @@ public class PhotoLibraryService {
       public void run(final String filePath) {
         try {
           // Find the saved image in the library and return it as libraryItem
-          final String whereClause = MediaStore.MediaColumns.DATA + " = \"" + filePath + "\"";
-          queryLibrary(context, whereClause, new ChunkResultRunnable() {
-            @Override
-            public void run(final ArrayList<JSONObject> chunk, final int chunkNum, final boolean isLastChunk) {
-              completion.run(chunk.size() == 1 ? chunk.get(0) : null);
-            }
-          });
+          final String fileName = filePath.substring(filePath.lastIndexOf("/") + 1 );
+          final String whereClause = MediaStore.MediaColumns.DISPLAY_NAME + " = \"" + fileName + "\"";
+          queryLibrary(context, whereClause, (chunk, chunkNum, isLastChunk) ->
+                  completion.run(chunk.size() == 1 ? chunk.get(0) : null)
+          );
         } catch (final Exception e) {
           completion.run(null);
         }
@@ -242,23 +240,19 @@ public class PhotoLibraryService {
 
   }
 
-  public void getPhotoLibraryItem(final Context context, final String photoId, final JSONObjectRunnable completion)
+  public void getPhotoLibraryItem(final Context context, final String filePath, final JSONObjectRunnable completion)
     throws IOException, URISyntaxException {
 
         try {
           // Find the saved image in the library and return it as libraryItem
-          final String whereClause = MediaStore.Images.Media._ID + " = \"" + photoId + "\"";
-          queryLibrary(context, whereClause, new ChunkResultRunnable() {
-            @Override
-            public void run(final ArrayList<JSONObject> chunk, final int chunkNum, final boolean isLastChunk) {
-              completion.run(chunk.size() == 1 ? chunk.get(0) : null);
-            }
-          });
+          final  String fileName = filePath.substring(filePath.lastIndexOf("/") + 1 );;
+          final String whereClause = MediaStore.MediaColumns.DISPLAY_NAME + " = \"" + fileName + "\"";
+          queryLibrary(context, whereClause, (chunk, chunkNum, isLastChunk) ->
+                  completion.run(chunk.size() == 1 ? chunk.get(0) : null)
+          );
         } catch (final Exception e) {
           completion.run(null);
         }
-
-
   }
 
   public void saveVideo(final Context context, final CordovaInterface cordova, final String url, final String album)
@@ -732,6 +726,16 @@ public class PhotoLibraryService {
           return null;
       }
     }.execute();
+  }
+
+  private String getRelativePath(final String fileUri) {
+    String[] filePaths = fileUri.replaceAll("/", "//").split("//");
+    Integer pathNb = filePaths.length;
+    return  filePaths[pathNb - 3] + "/" + filePaths[pathNb - 2] + "/";
+  }
+
+  private String getFileName(final String fileUri) {
+    return  fileUri.substring(fileUri.lastIndexOf("/") + 1 );
   }
 
   public interface ChunkResultRunnable {

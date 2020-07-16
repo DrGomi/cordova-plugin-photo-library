@@ -34,6 +34,7 @@ public class PhotoLibrary extends CordovaPlugin {
   public static final String ACTION_STOP_CACHING = "stopCaching";
   public static final String ACTION_REQUEST_AUTHORIZATION = "requestAuthorization";
   public static final String ACTION_ADD_IMAGE_TO_ALBUM = "addLibraryItemToAlbum";
+ public static final String ACTION_GET_LIBRARY_ITEM = "getPhotoLibraryItem";
   public static final String ACTION_SAVE_IMAGE = "saveImage";
   public static final String ACTION_SAVE_VIDEO = "saveVideo";
 
@@ -216,6 +217,28 @@ public class PhotoLibrary extends CordovaPlugin {
           }
         });
         return true;
+
+      } else if (ACTION_GET_LIBRARY_ITEM.equals(action)) {
+       cordova.getThreadPool().execute(new Runnable() {
+         public void run() {
+           try {
+
+             final String fileName = args.getString(0);
+
+             service.getPhotoLibraryItem(getContext(), fileName, new PhotoLibraryService.JSONObjectRunnable() {
+               @Override
+               public void run(JSONObject result) {
+                 callbackContext.success(result);
+               }
+             });
+
+           } catch (Exception e) {
+             e.printStackTrace();
+             callbackContext.error(e.getMessage());
+           }
+         }
+       });
+       return true;
 
       } else if (ACTION_SAVE_IMAGE.equals(action)) {
         cordova.getThreadPool().execute(new Runnable() {
