@@ -719,12 +719,12 @@ public class PhotoLibraryService {
       startFile.renameTo(targetFile);
 
       // clear Media Gallery in background
-      clearMediaLib(startFilePath);
+      clearMediaGallery(context, startFilePath);
       // add target File to Media Gallery
       addFileToMediaLibrary(context, targetFile, completion);
   }
 
-  private void clearMediaGallery(final String fileUri) {
+  private void clearMediaGallery(final Context context, final String fileUri) {
     new AsyncTask<Void, Void, Void>(){
       @Override
       protected Void doInBackground(Void... params) {
