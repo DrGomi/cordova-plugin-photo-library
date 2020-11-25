@@ -69,7 +69,7 @@ public class PhotoLibraryService {
   public void getLibrary(final Context context, final PhotoLibraryGetLibraryOptions options, final ChunkResultRunnable completion) throws JSONException {
 
     final String whereClause = "";
-    queryLibrary(context, options.itemsInChunk, options.chunkTimeSec, options.includeAlbumData, whereClause, completion);
+    queryLibrary(context, options.itemsInChunk, options.chunkTimeSec, options.includeAlbumData, whereClause,new String[]{}, completion);
 
   }
 
@@ -82,7 +82,7 @@ public class PhotoLibraryService {
       put("title", MediaStore.Images.ImageColumns.BUCKET_DISPLAY_NAME);
     }};
 
-    final ArrayList<JSONObject> queryResult = queryContentProvider(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, "1) GROUP BY 1,(2");
+    final ArrayList<JSONObject> queryResult = queryContentProvider(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, "1) GROUP BY 1,(2", new String[]{});
 
     return queryResult;
 
@@ -196,64 +196,34 @@ public class PhotoLibraryService {
 
   }
 
+  public void getPhotoLibraryItem(final Context context, final String filePath, final JSONObjectRunnable completion) {
+    try {
+      final String fileName = filePath.substring(filePath.lastIndexOf("/") + 1 );
+      final String[] whichImgs = { fileName };
+      final String whereClause = "_display_name = ?";
+      queryLibrary(context, whereClause, whichImgs, (chunk, chunkNum, isLastChunk) ->
+              completion.run(chunk.size() == 1 ? chunk.get(0) : null)
+      );
+    } catch (final Exception e) {
+      JSONObject errorJSON = new JSONObject();
+      try {
+        errorJSON.put("status", "error");
+        errorJSON.put("message", e.toString());
+      } catch (final Exception ignored){ }
+      completion.run(errorJSON);
+    }
+  }
+
   public void saveImage(final Context context, final CordovaInterface cordova, final String url, final String album, final JSONObjectRunnable completion)
-    throws IOException, URISyntaxException {
-
-    saveMedia(context, cordova, url, album, imageMimeToExtension, new FilePathRunnable() {
-      @Override
-      public void run(final String filePath) {
-        try {
-          // Find the saved image in the library and return it as libraryItem
-          final String whereClause = MediaStore.MediaColumns.DATA + " = \"" + filePath + "\"";
-          queryLibrary(context, whereClause, new ChunkResultRunnable() {
-            @Override
-            public void run(final ArrayList<JSONObject> chunk, final int chunkNum, final boolean isLastChunk) {
-              completion.run(chunk.size() == 1 ? chunk.get(0) : null);
-            }
-          });
-        } catch (final Exception e) {
-          completion.run(null);
-        }
-      }
-    });
-
+          throws IOException, URISyntaxException {
+    saveMedia(context, cordova, url, album, imageMimeToExtension, filePath -> getPhotoLibraryItem(context, filePath, completion) );
   }
 
   public void addImageToAlbum(final Context context, final String url, final String album, final JSONObjectRunnable completion)
-    throws IOException, URISyntaxException {
-
-    addMedia(context, url, album, new FilePathRunnable() {
-      @Override
-      public void run(final String filePath) {
-        try {
-          // Find the saved image in the library and return it as libraryItem
-          final String fileName = filePath.substring(filePath.lastIndexOf("/") + 1 );
-          final String whereClause = MediaStore.MediaColumns.DISPLAY_NAME + " = \"" + fileName + "\"";
-          queryLibrary(context, whereClause, (chunk, chunkNum, isLastChunk) ->
-                  completion.run(chunk.size() == 1 ? chunk.get(0) : null)
-          );
-        } catch (final Exception e) {
-          completion.run(null);
-        }
-      }
-    });
-
+          throws IOException, URISyntaxException {
+    addMedia(context, url, album, filePath -> getPhotoLibraryItem(context, filePath, completion) );
   }
 
-  public void getPhotoLibraryItem(final Context context, final String filePath, final JSONObjectRunnable completion)
-    throws IOException, URISyntaxException {
-
-        try {
-          // Find the saved image in the library and return it as libraryItem
-          final  String fileName = filePath.substring(filePath.lastIndexOf("/") + 1 );;
-          final String whereClause = MediaStore.MediaColumns.DISPLAY_NAME + " = \"" + fileName + "\"";
-          queryLibrary(context, whereClause, (chunk, chunkNum, isLastChunk) ->
-                  completion.run(chunk.size() == 1 ? chunk.get(0) : null)
-          );
-        } catch (final Exception e) {
-          completion.run(null);
-        }
-  }
 
   public void saveVideo(final Context context, final CordovaInterface cordova, final String url, final String album)
     throws IOException, URISyntaxException {
@@ -301,7 +271,7 @@ public class PhotoLibraryService {
 
   private final Pattern dataURLPattern = Pattern.compile("^data:(.+?)/(.+?);base64,");
 
-  private ArrayList<JSONObject> queryContentProvider(final Context context, final Uri collection, final JSONObject columns, final String whereClause) throws JSONException {
+  private ArrayList<JSONObject> queryContentProvider(final Context context, final Uri collection, final JSONObject columns, final String whereClause, final String[] searchItems) throws JSONException {
 
     final ArrayList<String> columnNames = new ArrayList<String>();
     final ArrayList<String> columnValues = new ArrayList<String>();
@@ -320,7 +290,10 @@ public class PhotoLibraryService {
     final Cursor cursor = context.getContentResolver().query(
       collection,
       columnValues.toArray(new String[columns.length()]),
-      whereClause, null, sortOrder);
+      whereClause, //"_display_name = ?",
+      searchItems,
+      sortOrder
+    );
 
     final ArrayList<JSONObject> buffer = new ArrayList<JSONObject>();
 
@@ -360,12 +333,12 @@ public class PhotoLibraryService {
 
   }
 
-  private void queryLibrary(final Context context, final String whereClause, final ChunkResultRunnable completion) throws JSONException {
-    queryLibrary(context, 0, 0, false, whereClause, completion);
+  private void queryLibrary(final Context context, final String whereClause, final String[] searchItems, final ChunkResultRunnable completion) throws JSONException {
+    queryLibrary(context, 0, 0, false, whereClause, searchItems, completion);
   }
 
-  private void queryLibrary(final Context context, final int itemsInChunk, final double chunkTimeSec, final boolean includeAlbumData, final String whereClause, final ChunkResultRunnable completion)
-    throws JSONException {
+  private void queryLibrary(final Context context, final int itemsInChunk, final double chunkTimeSec, final boolean includeAlbumData, final String whereClause, final String[] searchItems, final ChunkResultRunnable completion)
+          throws JSONException {
 
     // All columns here: https://developer.android.com/reference/android/provider/MediaStore.Images.ImageColumns.html,
     // https://developer.android.com/reference/android/provider/MediaStore.MediaColumns.html
@@ -381,7 +354,7 @@ public class PhotoLibraryService {
       put("nativeURL", MediaStore.MediaColumns.DATA); // will not be returned to javascript
     }};
 
-    final ArrayList<JSONObject> queryResults = queryContentProvider(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, whereClause);
+    final ArrayList<JSONObject> queryResults = queryContentProvider(context, MediaStore.Images.Media.EXTERNAL_CONTENT_URI, columns, whereClause, searchItems);
 
     ArrayList<JSONObject> chunk = new ArrayList<JSONObject>();
 
@@ -715,7 +688,8 @@ public class PhotoLibraryService {
       // save targetFileUri as well ... and save update fileUris in Array
       final String targetFilePath = targetFile.getAbsolutePath();
 
-      final String[] updateFiles = { startFilePath, targetFilePath };
+      // final String[] updateFiles = { startFilePath, targetFilePath }; ???
+      final String[] updateFiles = { targetFilePath };
 
       // refresh Media Gallery
       refreshMediaLibrary(context, updateFiles, completion);
